@@ -24,11 +24,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
     try {
       const user = await authService.signIn();
       onAuthSuccess(user);
-      onClose();
     } catch (error) {
       console.error('Authentication failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-      onAuthError(errorMessage);
+      
+      // Provide more user-friendly error messages
+      let friendlyMessage = errorMessage;
+      if (errorMessage.includes('popup')) {
+        friendlyMessage = 'Please allow popups for this site and try again.';
+      } else if (errorMessage.includes('timeout')) {
+        friendlyMessage = 'Sign-in is taking longer than expected. Please try again.';
+      } else if (errorMessage.includes('cancelled')) {
+        friendlyMessage = 'Sign-in was cancelled. Please try again if you want to continue.';
+      }
+      
+      onAuthError(friendlyMessage);
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +82,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
-          className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 min-h-[48px]"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
@@ -107,7 +117,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
         <p className="text-xs text-gray-500 text-center mt-4">
           By signing in, you agree to our Terms of Service and Privacy Policy.
           <br className="hidden sm:block" />
-          <span className="block sm:inline mt-1 sm:mt-0">We use Google's secure authentication system to protect your account.</span>
+          <span className="block sm:inline mt-1 sm:mt-0">
+            We use Google's secure authentication. If you experience issues, please allow popups and try again.
+          </span>
         </p>
       </div>
     </div>

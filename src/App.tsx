@@ -125,10 +125,25 @@ function App() {
     try {
       const generatedRecipe = await geminiService.generateRecipe(query);
       handleRecipeGenerated(generatedRecipe);
-      setIsGenerating(false);
     } catch (error) {
       console.error('Recipe generation failed:', error);
-      setError(error instanceof Error ? error.message : 'Failed to generate recipe');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to generate recipe. Please try again.';
+      if (error instanceof Error) {
+        if (error.message.includes('busy') || error.message.includes('overloaded')) {
+          errorMessage = 'The AI service is currently busy. Please try again in a few moments.';
+        } else if (error.message.includes('network') || error.message.includes('timeout')) {
+          errorMessage = 'Network connection issue. Please check your internet and try again.';
+        } else if (error.message.includes('quota') || error.message.includes('rate limit')) {
+          errorMessage = 'Too many requests. Please wait a moment and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
+    } finally {
       setIsGenerating(false);
     }
   };
