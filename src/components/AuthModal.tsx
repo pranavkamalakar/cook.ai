@@ -22,12 +22,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      await authService.initialize();
       const user = await authService.signIn();
-      onAuthSuccess(user);
-      onClose();
+      if (user) {
+        onAuthSuccess(user);
+        onClose();
+      }
     } catch (error) {
       console.error('Authentication failed:', error);
-      onAuthError(error instanceof Error ? error.message : 'Authentication failed');
+      const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+      onAuthError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -71,10 +75,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
-          className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin" />
+            <>
+              <div className="w-5 h-5 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin" />
+              <span>Signing in...</span>
+            </>
           ) : (
             <>
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -101,7 +108,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
         </button>
 
         <p className="text-xs text-gray-500 text-center mt-4">
-          By signing in, you agree to our Terms of Service and Privacy Policy
+          By signing in, you agree to our Terms of Service and Privacy Policy.
+          <br />
+          We use Google's secure authentication system to protect your account.
         </p>
       </div>
     </div>
