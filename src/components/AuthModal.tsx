@@ -22,12 +22,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await authService.initialize();
       const user = await authService.signIn();
-      if (user) {
-        onAuthSuccess(user);
-        onClose();
-      }
+      onAuthSuccess(user);
+      onClose();
     } catch (error) {
       console.error('Authentication failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
@@ -75,13 +72,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
-          className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+          className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
         >
           {isLoading ? (
-            <>
+            <div className="flex items-center space-x-2">
               <div className="w-5 h-5 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin" />
               <span>Signing in...</span>
-            </>
+            </div>
           ) : (
             <>
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -109,8 +106,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, o
 
         <p className="text-xs text-gray-500 text-center mt-4">
           By signing in, you agree to our Terms of Service and Privacy Policy.
-          <br />
-          We use Google's secure authentication system to protect your account.
+          <br className="hidden sm:block" />
+          <span className="block sm:inline mt-1 sm:mt-0">We use Google's secure authentication system to protect your account.</span>
         </p>
       </div>
     </div>
