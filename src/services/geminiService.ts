@@ -110,18 +110,22 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
 
       const res = await fetch(`${CUSTOM_SEARCH_API_URL}?${params.toString()}`);
       if (!res.ok) {
-        throw new Error(`Image search failed: ${res.statusText}`);
+        console.warn(`Image search failed: ${res.status} ${res.statusText}. Using fallback image.`);
+        return this.getFallbackFoodImage();
       }
 
       const data = await res.json();
       if (data.items && data.items.length > 0) {
         return data.items[0].link;
+      } else {
+        console.warn('No images found in search results. Using fallback image.');
+        return this.getFallbackFoodImage();
       }
     } catch (error) {
-      console.error('Error fetching recipe image:', error);
+      console.warn('Error fetching recipe image, using fallback:', error);
+      return this.getFallbackFoodImage();
     }
 
-    return this.getFallbackFoodImage();
   }
 
   private getFallbackFoodImage(): string {
