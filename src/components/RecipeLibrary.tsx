@@ -5,10 +5,20 @@ import { Recipe } from '../types/Recipe';
 interface RecipeLibraryProps {
   recipes: Recipe[];
   onSelectRecipe: (recipe: Recipe) => void;
+  onDeleteRecipe: (recipeId: string) => void;
+  onToggleFavorite: (recipeId: string) => void;
+  onRateRecipe: (recipeId: string, rating: number) => void;
   onBack: () => void;
 }
 
-const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ recipes, onSelectRecipe, onBack }) => {
+const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ 
+  recipes, 
+  onSelectRecipe, 
+  onDeleteRecipe, 
+  onToggleFavorite, 
+  onRateRecipe, 
+  onBack 
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBy, setFilterBy] = useState<'all' | 'favorites' | 'recent'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'rating' | 'cookTime'>('newest');
@@ -145,7 +155,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ recipes, onSelectRecipe, 
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Toggle favorite functionality
+                      onToggleFavorite(recipe.id);
                     }}
                     className="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors"
                   >
@@ -203,7 +213,9 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ recipes, onSelectRecipe, 
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Delete recipe functionality
+                      if (confirm('Are you sure you want to delete this recipe?')) {
+                        onDeleteRecipe(recipe.id);
+                      }
                     }}
                     className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                   >

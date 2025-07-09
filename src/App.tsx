@@ -9,6 +9,7 @@ import { Recipe } from './types/Recipe';
 import { User } from './types/User';
 import { geminiService } from './services/geminiService';
 import { authService } from './services/authService';
+import { recipeStorageService } from './services/recipeStorageService';
 
 type Screen = 'home' | 'generation' | 'cooking' | 'library';
 
@@ -23,23 +24,77 @@ function App() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load recipes from localStorage on app start
-    const savedRecipes = localStorage.getItem('cook-ai-recipes');
-    if (savedRecipes) {
-      setRecipes(JSON.parse(savedRecipes));
-    }
-    
     // Check if user is already authenticated
     const currentUser = authService.getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
+      loadUserRecipes(currentUser);
     }
   }, []);
 
+  const loadUserRecipes = (user: User) => {
+    try {
+      // Migrate any legacy recipes first
+      recipeStorageService.migrateLegacyRecipes(user);
+      
+      // Load user-specific recipes
+      const userRecipes = recipeStorageService.getUserRecipes(user);
+      setRecipes(userRecipes);
+    } catch (error) {
+      console.error('Error loading user recipes:', error);
+      setError('Failed to load your recipes');
+    }
+  };
+
   const saveRecipe = (recipe: Recipe) => {
-    const updatedRecipes = [...recipes, recipe];
-    setRecipes(updatedRecipes);
-    localStorage.setItem('cook-ai-recipes', JSON.stringify(updatedRecipes));
+    if (!user) {
+      setError('You must be signed in to save recipes');
+      return;
+    }
+
+    try {
+      const updatedRecipes = recipeStorageService.saveUserRecipe(user, recipe);
+      setRecipes(updatedRecipes);
+    } catch (error) {
+      console.error('Error saving recipe:', error);
+      setError('Failed to save recipe');
+    }
+  };
+
+  const deleteRecipe = (recipeId: string) => {
+    if (!user) return;
+
+    try {
+      const updatedRecipes = recipeStorageService.deleteUserRecipe(user, recipeId);
+      setRecipes(updatedRecipes);
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      setError('Failed to delete recipe');
+    }
+  };
+
+  const toggleRecipeFavorite = (recipeId: string) => {
+    if (!user) return;
+
+    try {
+      const updatedRecipes = recipeStorageService.toggleRecipeFavorite(user, recipeId);
+      setRecipes(updatedRecipes);
+    } catch (error) {
+      console.error('Error updating recipe favorite:', error);
+      setError('Failed to update recipe');
+    }
+  };
+
+  const rateRecipe = (recipeId: string, rating: number) => {
+    if (!user) return;
+
+    try {
+      const updatedRecipes = recipeStorageService.rateRecipe(user, recipeId, rating);
+      setRecipes(updatedRecipes);
+    } catch (error) {
+      console.error('Error rating recipe:', error);
+      setError('Failed to rate recipe');
+    }
   };
 
   const handleNavigation = (screen: Screen) => {
@@ -80,6 +135,7 @@ function App() {
 
   const handleAuthSuccess = (authenticatedUser: User) => {
     setUser(authenticatedUser);
+    loadUserRecipes(authenticatedUser);
     setAuthError(null);
     setShowAuthModal(false);
   };
@@ -91,6 +147,7 @@ function App() {
   const handleSignOut = () => {
     authService.signOut();
     setUser(null);
+    setRecipes([]); // Clear recipes from state
     setCurrentScreen('home');
   };
 
@@ -136,6 +193,9 @@ function App() {
           <RecipeLibrary
             recipes={recipes}
             onSelectRecipe={handleStartCooking}
+            onDeleteRecipe={deleteRecipe}
+            onToggleFavorite={toggleRecipeFavorite}
+            onRateRecipe={rateRecipe}
             onBack={() => setCurrentScreen('home')}
           />
         );
