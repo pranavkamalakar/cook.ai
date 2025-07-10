@@ -49,13 +49,17 @@ export class AuthService {
         // Add a delay to ensure the script is fully loaded and initialized
         setTimeout(() => {
           try {
+            if (!window.google?.accounts?.id) {
+              reject(new Error('Google Identity Services failed to load properly'));
+              return;
+            }
             this.initializeGoogleAuth();
             this.isInitialized = true;
             resolve();
           } catch (error) {
             reject(error);
           }
-        }, 500);
+        }, 1000); // Increased delay to ensure proper loading
       };
       
       script.onerror = () => {
@@ -78,11 +82,8 @@ export class AuthService {
         client_id: this.clientId,
         auto_select: false,
         cancel_on_tap_outside: true,
-        // Enable FedCM to suppress warnings
         use_fedcm_for_prompt: true,
-        // Suppress console warnings in production
         log_level: 'error',
-        // Add allowed parent origin for iframe
         allowed_parent_origin: window.location.origin,
       });
     } catch (error) {
@@ -92,7 +93,16 @@ export class AuthService {
   }
 
   async signIn(): Promise<User> {
-    await this.initialize();
+    try {
+      // Ensure Google Auth is properly initialized
+      await this.initialize();
+      
+      if (!window.google?.accounts?.id) {
+        throw new Error('Google Authentication service is not available. Please refresh the page and try again.');
+      }
+    } catch (error) {
+      throw new Error('Failed to initialize Google Authentication. Please refresh the page and try again.');
+    }
     
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
@@ -100,7 +110,7 @@ export class AuthService {
       }, 90000); // 90 second timeout for slower connections
 
       try {
-        // Use a more robust callback approach
+        // Create a more robust callback approach
         const handleCredentialResponse = (response: any) => {
           clearTimeout(timeoutId);
           
@@ -119,144 +129,117 @@ export class AuthService {
           }
         };
 
+        // Re-initialize with callback to ensure it's properly set
         window.google.accounts.id.initialize({
           client_id: this.clientId,
           callback: handleCredentialResponse,
           auto_select: false,
-          cancel_on_tap_outside: false, // Prevent accidental cancellation
+          cancel_on_tap_outside: false,
           use_fedcm_for_prompt: true,
           log_level: 'error',
           allowed_parent_origin: window.location.origin,
         });
 
-        // Try prompt first, then fallback to popup
+        // Try prompt first
         window.google.accounts.id.prompt((notification: any) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Clear the timeout and try popup method
+            // Clear the timeout and try alternative methods
             clearTimeout(timeoutId);
-            this.openSignInPopup()
+            this.showSignInButton()
               .then(resolve)
-              .catch((popupError) => {
-                // If popup also fails, try the renderButton approach
-                this.renderSignInButton()
-                  .then(resolve)
-                  .catch(reject);
-              });
+              .catch(reject);
           }
         });
       } catch (error) {
         clearTimeout(timeoutId);
-        reject(new Error('Failed to initialize sign-in process'));
+        console.error('Sign-in initialization error:', error);
+        reject(new Error('Failed to start sign-in process. Please refresh the page and try again.'));
       }
     });
   }
 
-  private async openSignInPopup(): Promise<User> {
+  private async showSignInButton(): Promise<User> {
     return new Promise((resolve, reject) => {
-      try {
-        // Create a popup window for sign-in
-        const popup = window.open(
-          `https://accounts.google.com/oauth/authorize?client_id=${this.clientId}&response_type=token&scope=openid%20email%20profile&redirect_uri=${encodeURIComponent(window.location.origin)}`,
-          'google-signin',
-          'width=500,height=600,scrollbars=yes,resizable=yes'
-        );
+      // Create a modal overlay for the sign-in button
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
 
-        if (!popup) {
-          reject(new Error('Popup blocked. Please allow popups and try again.'));
-          return;
-        }
-
-        // Fallback to button method if popup doesn't work
-        setTimeout(() => {
-          if (popup && !popup.closed) {
-            popup.close();
-          }
-          this.renderSignInButton().then(resolve).catch(reject);
-        }, 5000);
-
-      } catch (error) {
-        this.renderSignInButton().then(resolve).catch(reject);
-      }
-    });
-  }
-
-  private async renderSignInButton(): Promise<User> {
-    return new Promise((resolve, reject) => {
-      // Create a temporary container for the Google Sign-In button
       const container = document.createElement('div');
-      container.id = 'google-signin-container-' + Date.now();
-      container.style.position = 'fixed';
-      container.style.top = '50%';
-      container.style.left = '50%';
-      container.style.transform = 'translate(-50%, -50%)';
-      container.style.zIndex = '10000';
-      container.style.backgroundColor = 'white';
-      container.style.padding = '20px';
-      container.style.borderRadius = '10px';
-      container.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-      
-      // Add backdrop
-      const backdrop = document.createElement('div');
-      backdrop.style.position = 'fixed';
-      backdrop.style.top = '0';
-      backdrop.style.left = '0';
-      backdrop.style.width = '100%';
-      backdrop.style.height = '100%';
-      backdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
-      backdrop.style.zIndex = '9999';
-      
-      document.body.appendChild(backdrop);
-      document.body.appendChild(container);
+      container.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+      `;
 
-      const cleanup = () => {
-        if (document.body.contains(container)) {
-          document.body.removeChild(container);
-        }
-        if (document.body.contains(backdrop)) {
-          document.body.removeChild(backdrop);
-        }
-      };
+      const title = document.createElement('h2');
+      title.textContent = 'Sign in to Cook.AI';
+      title.style.cssText = `
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 24px;
+        font-weight: bold;
+      `;
 
-      // Add close button
+      const subtitle = document.createElement('p');
+      subtitle.textContent = 'Click the button below to sign in with Google';
+      subtitle.style.cssText = `
+        margin: 0 0 20px 0;
+        color: #666;
+        font-size: 16px;
+      `;
+
+      const buttonContainer = document.createElement('div');
+      buttonContainer.id = 'google-signin-button-' + Date.now();
+      buttonContainer.style.cssText = `
+        margin: 20px 0;
+        display: flex;
+        justify-content: center;
+      `;
+
       const closeButton = document.createElement('button');
-      closeButton.innerHTML = '×';
-      closeButton.style.position = 'absolute';
-      closeButton.style.top = '5px';
-      closeButton.style.right = '10px';
-      closeButton.style.border = 'none';
-      closeButton.style.background = 'none';
-      closeButton.style.fontSize = '20px';
-      closeButton.style.cursor = 'pointer';
+      closeButton.textContent = 'Cancel';
+      closeButton.style.cssText = `
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 15px;
+      `;
+
       closeButton.onclick = () => {
-        cleanup();
+        document.body.removeChild(overlay);
         reject(new Error('Sign-in cancelled by user'));
       };
-      
-      const title = document.createElement('div');
-      title.textContent = 'Sign in to Cook.AI';
-      title.style.marginBottom = '15px';
-      title.style.fontWeight = 'bold';
-      title.style.textAlign = 'center';
-      
-      container.appendChild(closeButton);
+
       container.appendChild(title);
+      container.appendChild(subtitle);
+      container.appendChild(buttonContainer);
+      container.appendChild(closeButton);
+      overlay.appendChild(container);
+      document.body.appendChild(overlay);
 
       try {
-        window.google.accounts.id.renderButton(container, {
-          theme: 'outline',
-          size: 'large',
-          type: 'standard',
-          shape: 'rectangular',
-          text: 'signin_with',
-          logo_alignment: 'left',
-          width: 280,
-        });
-
-        // Set up the callback for this button
+        // Set up the callback for the button
         window.google.accounts.id.initialize({
           client_id: this.clientId,
           callback: (response: any) => {
-            cleanup();
+            document.body.removeChild(overlay);
             
             if (response.credential) {
               try {
@@ -276,15 +259,28 @@ export class AuthService {
           log_level: 'error',
         });
 
-        // Auto-cleanup after 60 seconds
+        // Render the Google Sign-In button
+        window.google.accounts.id.renderButton(buttonContainer, {
+          theme: 'outline',
+          size: 'large',
+          type: 'standard',
+          shape: 'rectangular',
+          text: 'signin_with',
+          logo_alignment: 'left',
+          width: 280,
+        });
+
+        // Auto-cleanup after 2 minutes
         setTimeout(() => {
-          cleanup();
-          reject(new Error('Sign-in timeout'));
-        }, 60000);
+          if (document.body.contains(overlay)) {
+            document.body.removeChild(overlay);
+            reject(new Error('Sign-in timeout'));
+          }
+        }, 120000);
 
       } catch (error) {
-        cleanup();
-        reject(new Error('Failed to render sign-in button'));
+        document.body.removeChild(overlay);
+        reject(new Error('Failed to create sign-in button'));
       }
     });
   }
