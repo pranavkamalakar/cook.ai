@@ -97,7 +97,7 @@ export class AuthService {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error('Sign-in timeout. Please try again.'));
-      }, 45000); // 45 second timeout for slower connections
+      }, 90000); // 90 second timeout for slower connections
 
       try {
         // Use a more robust callback approach
