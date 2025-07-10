@@ -59,7 +59,7 @@ export class AuthService {
           } catch (error) {
             reject(error);
           }
-        }, 1000); // Increased delay to ensure proper loading
+        }, 1000);
       };
       
       script.onerror = () => {
@@ -81,20 +81,17 @@ export class AuthService {
       window.google.accounts.id.initialize({
         client_id: this.clientId,
         auto_select: false,
-        cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: true,
+        cancel_on_tap_outside: false,
+        use_fedcm_for_prompt: false, // Disable FedCM to use traditional popup
         log_level: 'error',
-        allowed_parent_origin: window.location.origin,
       });
     } catch (error) {
       console.warn('Google Auth initialization warning (non-critical):', error);
-      // Continue anyway as some warnings are non-critical
     }
   }
 
   async signIn(): Promise<User> {
     try {
-      // Ensure Google Auth is properly initialized
       await this.initialize();
       
       if (!window.google?.accounts?.id) {
@@ -104,63 +101,13 @@ export class AuthService {
       throw new Error('Failed to initialize Google Authentication. Please refresh the page and try again.');
     }
     
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Sign-in timeout. Please try again.'));
-      }, 90000); // 90 second timeout for slower connections
-
-      try {
-        // Create a more robust callback approach
-        const handleCredentialResponse = (response: any) => {
-          clearTimeout(timeoutId);
-          
-          if (response.credential) {
-            try {
-              const user = this.parseJwtToken(response.credential);
-              this.saveUserToStorage(user);
-              resolve(user);
-            } catch (error) {
-              reject(new Error('Failed to process sign-in credentials'));
-            }
-          } else if (response.error) {
-            reject(new Error(`Sign-in failed: ${response.error}`));
-          } else {
-            reject(new Error('Sign-in was cancelled'));
-          }
-        };
-
-        // Re-initialize with callback to ensure it's properly set
-        window.google.accounts.id.initialize({
-          client_id: this.clientId,
-          callback: handleCredentialResponse,
-          auto_select: false,
-          cancel_on_tap_outside: false,
-          use_fedcm_for_prompt: true,
-          log_level: 'error',
-          allowed_parent_origin: window.location.origin,
-        });
-
-        // Try prompt first
-        window.google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Clear the timeout and try alternative methods
-            clearTimeout(timeoutId);
-            this.showSignInButton()
-              .then(resolve)
-              .catch(reject);
-          }
-        });
-      } catch (error) {
-        clearTimeout(timeoutId);
-        console.error('Sign-in initialization error:', error);
-        reject(new Error('Failed to start sign-in process. Please refresh the page and try again.'));
-      }
-    });
+    // Always show the sign-in button modal instead of trying prompt first
+    return this.showSignInModal();
   }
 
-  private async showSignInButton(): Promise<User> {
+  private async showSignInModal(): Promise<User> {
     return new Promise((resolve, reject) => {
-      // Create a modal overlay for the sign-in button
+      // Create modal overlay
       const overlay = document.createElement('div');
       overlay.style.cssText = `
         position: fixed;
@@ -168,78 +115,180 @@ export class AuthService {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.6);
         z-index: 10000;
         display: flex;
         align-items: center;
         justify-content: center;
+        backdrop-filter: blur(4px);
       `;
 
-      const container = document.createElement('div');
-      container.style.cssText = `
+      const modal = document.createElement('div');
+      modal.style.cssText = `
         background: white;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         text-align: center;
-        max-width: 400px;
+        max-width: 450px;
         width: 90%;
+        position: relative;
+        animation: modalSlideIn 0.3s ease-out;
       `;
+
+      // Add animation keyframes
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Close button
+      const closeButton = document.createElement('button');
+      closeButton.innerHTML = '×';
+      closeButton.style.cssText = `
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #999;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+      `;
+      closeButton.onmouseover = () => {
+        closeButton.style.background = '#f5f5f5';
+        closeButton.style.color = '#333';
+      };
+      closeButton.onmouseout = () => {
+        closeButton.style.background = 'none';
+        closeButton.style.color = '#999';
+      };
+
+      // Logo/Icon
+      const icon = document.createElement('div');
+      icon.style.cssText = `
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        border-radius: 15px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      `;
+      icon.innerHTML = '👨‍🍳';
 
       const title = document.createElement('h2');
-      title.textContent = 'Sign in to Cook.AI';
+      title.textContent = 'Welcome to Cook.AI';
       title.style.cssText = `
         margin: 0 0 10px 0;
         color: #333;
-        font-size: 24px;
-        font-weight: bold;
+        font-size: 28px;
+        font-weight: 700;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       `;
 
       const subtitle = document.createElement('p');
-      subtitle.textContent = 'Click the button below to sign in with Google';
+      subtitle.textContent = 'Sign in with Google to start generating personalized recipes';
       subtitle.style.cssText = `
-        margin: 0 0 20px 0;
+        margin: 0 0 30px 0;
         color: #666;
         font-size: 16px;
+        line-height: 1.5;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       `;
 
       const buttonContainer = document.createElement('div');
       buttonContainer.id = 'google-signin-button-' + Date.now();
       buttonContainer.style.cssText = `
-        margin: 20px 0;
+        margin: 30px 0 20px 0;
         display: flex;
         justify-content: center;
       `;
 
-      const closeButton = document.createElement('button');
-      closeButton.textContent = 'Cancel';
-      closeButton.style.cssText = `
-        background: #f5f5f5;
-        border: 1px solid #ddd;
-        padding: 10px 20px;
-        border-radius: 8px;
+      const cancelButton = document.createElement('button');
+      cancelButton.textContent = 'Cancel';
+      cancelButton.style.cssText = `
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        color: #6c757d;
+        padding: 12px 24px;
+        border-radius: 10px;
         cursor: pointer;
-        margin-top: 15px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       `;
+      cancelButton.onmouseover = () => {
+        cancelButton.style.background = '#e9ecef';
+        cancelButton.style.borderColor = '#dee2e6';
+      };
+      cancelButton.onmouseout = () => {
+        cancelButton.style.background = '#f8f9fa';
+        cancelButton.style.borderColor = '#e9ecef';
+      };
+
+      const cleanup = () => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+        }
+        if (document.head.contains(style)) {
+          document.head.removeChild(style);
+        }
+      };
 
       closeButton.onclick = () => {
-        document.body.removeChild(overlay);
+        cleanup();
         reject(new Error('Sign-in cancelled by user'));
       };
 
-      container.appendChild(title);
-      container.appendChild(subtitle);
-      container.appendChild(buttonContainer);
-      container.appendChild(closeButton);
-      overlay.appendChild(container);
+      cancelButton.onclick = () => {
+        cleanup();
+        reject(new Error('Sign-in cancelled by user'));
+      };
+
+      // Close on overlay click
+      overlay.onclick = (e) => {
+        if (e.target === overlay) {
+          cleanup();
+          reject(new Error('Sign-in cancelled by user'));
+        }
+      };
+
+      modal.appendChild(closeButton);
+      modal.appendChild(icon);
+      modal.appendChild(title);
+      modal.appendChild(subtitle);
+      modal.appendChild(buttonContainer);
+      modal.appendChild(cancelButton);
+      overlay.appendChild(modal);
       document.body.appendChild(overlay);
 
       try {
-        // Set up the callback for the button
+        // Initialize Google Auth with callback
         window.google.accounts.id.initialize({
           client_id: this.clientId,
           callback: (response: any) => {
-            document.body.removeChild(overlay);
+            cleanup();
             
             if (response.credential) {
               try {
@@ -255,7 +304,7 @@ export class AuthService {
           },
           auto_select: false,
           cancel_on_tap_outside: false,
-          use_fedcm_for_prompt: true,
+          use_fedcm_for_prompt: false,
           log_level: 'error',
         });
 
@@ -267,20 +316,18 @@ export class AuthService {
           shape: 'rectangular',
           text: 'signin_with',
           logo_alignment: 'left',
-          width: 280,
+          width: 300,
         });
 
-        // Auto-cleanup after 2 minutes
+        // Auto-cleanup after 5 minutes
         setTimeout(() => {
-          if (document.body.contains(overlay)) {
-            document.body.removeChild(overlay);
-            reject(new Error('Sign-in timeout'));
-          }
-        }, 120000);
+          cleanup();
+          reject(new Error('Sign-in timeout'));
+        }, 300000);
 
       } catch (error) {
-        document.body.removeChild(overlay);
-        reject(new Error('Failed to create sign-in button'));
+        cleanup();
+        reject(new Error('Failed to create sign-in interface'));
       }
     });
   }
