@@ -13,7 +13,7 @@ if (!GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export class GeminiService {
-  private model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  private model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
   private maxRetries = 3;
   private baseDelay = 2000; // 2 seconds
 
