@@ -1,19 +1,16 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Recipe } from '../types/Recipe';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GOOGLE_SEARCH_API_KEY = import.meta.env.VITE_GOOGLE_SEARCH_API_KEY;
 const SEARCH_ENGINE_ID = '70abbb6c38bda4a32';
 const CUSTOM_SEARCH_API_URL = 'https://customsearch.googleapis.com/customsearch/v1';
 
-if (!GEMINI_API_KEY) {
-  throw new Error('VITE_GEMINI_API_KEY environment variable is not set');
+if (!GROQ_API_KEY) {
+  throw new Error('VITE_GROQ_API_KEY environment variable is not set');
 }
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-export class GeminiService {
-  private model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+export class GroqService {
+  private model = 'llama-3.3-70b-versatile';
   private maxRetries = 3;
   private baseDelay = 2000; // 2 seconds
 
@@ -50,16 +47,51 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        console.log(`Generating recipe (attempt ${attempt}/${this.maxRetries})...`);
+        console.log(`Generating recipe via Groq (attempt ${attempt}/${this.maxRetries})...`);
         
-        const result = await this.model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: this.model,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          const status = response.status;
+          const statusText = response.statusText;
+          let errorDetail = '';
+          try {
+            const errorJson = await response.json();
+            errorDetail = errorJson?.error?.message || JSON.stringify(errorJson);
+          } catch {
+            // Ignore if response body cannot be parsed as JSON
+          }
+          throw new Error(`Groq API error (${status} ${statusText}): ${errorDetail}`);
+        }
+
+        const data = await response.json();
+        const text = data?.choices?.[0]?.message?.content;
         
+        if (!text) {
+          throw new Error('Empty response from Groq API');
+        }
+
         // Clean the response to extract JSON
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-          throw new Error('Invalid response format from Gemini');
+          throw new Error('Invalid JSON format returned from Groq');
         }
         
         const recipeData = JSON.parse(jsonMatch[0]);
@@ -72,8 +104,14 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
         // Fetch the main recipe image
         const recipeImage = await this.fetchRecipeImage(`${recipeData.title} ${query}`);
         
+        interface RawCookingStep {
+          id: number;
+          instruction: string;
+          duration: number;
+        }
+
         // Use the same image for all steps to avoid multiple API calls
-        const stepsWithImages = recipeData.steps.map((step: any, index: number) => ({
+        const stepsWithImages = (recipeData.steps as RawCookingStep[]).map((step, index) => ({
           ...step,
           id: index + 1,
           image: recipeImage
@@ -94,43 +132,23 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
           createdAt: new Date()
         };
         
-        console.log('Recipe generated successfully');
+        console.log('Recipe generated successfully via Groq');
         return recipe;
         
       } catch (error) {
         lastError = error as Error;
         console.warn(`Recipe generation attempt ${attempt} failed:`, error);
         
-        // Check if it's a rate limit or overload error
-        if (error instanceof Error) {
-          const errorMessage = error.message.toLowerCase();
-          if (errorMessage.includes('overloaded') || 
-              errorMessage.includes('503') || 
-              errorMessage.includes('rate limit') ||
-              errorMessage.includes('quota')) {
-            
-            if (attempt < this.maxRetries) {
-              const delay = this.baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
-              console.log(`Waiting ${delay}ms before retry...`);
-              await this.sleep(delay);
-              continue;
-            }
-          }
+        // Check if it's a retryable error
+        if (attempt < this.maxRetries && this.isRetryableError(error as Error)) {
+          const delay = this.baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+          console.log(`Waiting ${delay}ms before retry...`);
+          await this.sleep(delay);
+          continue;
         }
         
-        // If it's not a retryable error, throw immediately
-        if (attempt === 1 && !this.isRetryableError(error as Error)) {
-          throw error;
-        }
-        
-        // If this was the last attempt, throw the error
-        if (attempt === this.maxRetries) {
-          break;
-        }
-        
-        // Wait before retrying
-        const delay = this.baseDelay * attempt;
-        await this.sleep(delay);
+        // If it's not retryable or it's the last attempt, break and throw
+        break;
       }
     }
     
@@ -143,10 +161,12 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
     const errorMessage = error.message.toLowerCase();
     return errorMessage.includes('overloaded') ||
            errorMessage.includes('503') ||
+           errorMessage.includes('429') ||
            errorMessage.includes('rate limit') ||
            errorMessage.includes('quota') ||
            errorMessage.includes('timeout') ||
-           errorMessage.includes('network');
+           errorMessage.includes('network') ||
+           errorMessage.includes('fetch');
   }
 
   private getHelpfulErrorMessage(error: Error | null): string {
@@ -158,16 +178,16 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
       return 'The AI service is currently busy. Please try again in a few moments.';
     }
     
-    if (errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
+    if (errorMessage.includes('rate limit') || errorMessage.includes('429') || errorMessage.includes('quota')) {
       return 'Too many requests. Please wait a moment and try again.';
     }
     
-    if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
+    if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('fetch')) {
       return 'Network connection issue. Please check your internet and try again.';
     }
     
-    if (errorMessage.includes('api key')) {
-      return 'API configuration error. Please contact support.';
+    if (errorMessage.includes('api key') || errorMessage.includes('401')) {
+      return 'API configuration error. Please check your Groq API key.';
     }
     
     return 'Failed to generate recipe. Please try again or try a different recipe request.';
@@ -252,4 +272,4 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
   }
 }
 
-export const geminiService = new GeminiService();
+export const groqService = new GroqService();

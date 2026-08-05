@@ -7,7 +7,7 @@ import RecipeLibrary from './components/RecipeLibrary';
 import AuthModal from './components/AuthModal';
 import { Recipe } from './types/Recipe';
 import { User } from './types/User';
-import { geminiService } from './services/geminiService';
+import { groqService } from './services/groqService';
 import { authService } from './services/authService';
 import { recipeStorageService } from './services/recipeStorageService';
 
@@ -123,7 +123,7 @@ function App() {
     setError(null);
     
     try {
-      const generatedRecipe = await geminiService.generateRecipe(query);
+      const generatedRecipe = await groqService.generateRecipe(query);
       handleRecipeGenerated(generatedRecipe);
     } catch (error) {
       console.error('Recipe generation failed:', error);
