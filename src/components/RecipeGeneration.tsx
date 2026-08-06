@@ -26,45 +26,29 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
   }, [recipe, isGenerating]);
 
   const LoadingAnimation = () => (
-    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
-      <div className="relative">
-        <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-accent-500 rounded-2xl flex items-center justify-center animate-bounce-gentle">
-          <ChefHat className="w-10 h-10 text-white" />
-        </div>
-        <div className="absolute -inset-2 bg-gradient-to-br from-primary-600/20 to-accent-500/20 rounded-3xl animate-pulse"></div>
-      </div>
-      
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">Creating your recipe...</h2>
-        <p className="text-gray-600">Our AI chef is crafting something delicious for you</p>
-      </div>
-      
-      <div className="flex space-x-1">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"
-            style={{ animationDelay: `${i * 0.3}s` }}
-          />
-        ))}
+    <div className="flex flex-col items-center justify-center min-h-[350px] space-y-4">
+      <div className="w-10 h-10 border-2 border-stone-200 border-t-stone-850 rounded-full animate-spin" />
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-semibold text-stone-900">Creating your recipe</h2>
+        <p className="text-stone-500 text-sm">Please wait while our assistant drafts the details...</p>
       </div>
     </div>
   );
 
   const ErrorDisplay = () => (
-    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
-      <div className="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center">
-        <AlertCircle className="w-10 h-10 text-red-500" />
+    <div className="flex flex-col items-center justify-center min-h-[350px] space-y-5">
+      <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center border border-red-100">
+        <AlertCircle className="w-6 h-6 text-red-500" />
       </div>
       
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">Oops! Something went wrong</h2>
-        <p className="text-gray-600 max-w-md">{error}</p>
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-semibold text-stone-900">Something went wrong</h2>
+        <p className="text-stone-500 text-sm max-w-md">{error}</p>
       </div>
       
       <button
         onClick={onBack}
-        className="bg-gradient-to-r from-primary-600 to-accent-500 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+        className="bg-stone-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm"
       >
         Try Again
       </button>
@@ -82,7 +66,7 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
           <span>Back to search</span>
         </button>
         
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-200/50">
+        <div className="bg-white border border-stone-200 rounded-xl p-8 shadow-sm">
           <ErrorDisplay />
         </div>
       </div>
@@ -100,7 +84,7 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
           <span>Back to search</span>
         </button>
         
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-200/50">
+        <div className="bg-white border border-stone-200 rounded-xl p-8 shadow-sm">
           <LoadingAnimation />
         </div>
       </div>
@@ -121,7 +105,7 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
         <span>Back to search</span>
       </button>
 
-      <div className="bg-white/60 backdrop-blur-sm rounded-3xl overflow-hidden border border-gray-200/50 animate-fade-in">
+      <div className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
         {/* Recipe Header */}
         <div className="relative h-64 md:h-80">
           <img
@@ -175,11 +159,11 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
               {recipe.ingredients.map((ingredient, index) => (
                 <div
                   key={index}
-                  className="flex items-center space-x-3 p-3 bg-white/80 rounded-xl border border-gray-200/50"
+                  className="flex items-center space-x-3 p-2.5 bg-stone-50 rounded-lg border border-stone-100"
                 >
-                  <div className="w-2 h-2 bg-primary-500 rounded-full" />
-                  <span className="font-medium text-gray-900">{ingredient.amount}</span>
-                  <span className="text-gray-600">{ingredient.name}</span>
+                  <div className="w-1.5 h-1.5 bg-stone-400 rounded-full" />
+                  <span className="font-medium text-stone-900 text-sm">{ingredient.amount}</span>
+                  <span className="text-stone-600 text-sm">{ingredient.name}</span>
                 </div>
               ))}
             </div>
@@ -192,15 +176,15 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
               {recipe.steps.slice(0, 3).map((step) => (
                 <div
                   key={step.id}
-                  className="flex space-x-4 p-4 bg-white/80 rounded-xl border border-gray-200/50"
+                  className="flex space-x-3 p-3.5 bg-stone-50 rounded-lg border border-stone-100"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-accent-500 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  <div className="w-7 h-7 bg-stone-200 text-stone-700 rounded-md flex items-center justify-center font-bold text-sm flex-shrink-0">
                     {step.id}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-gray-800 mb-2">{step.instruction}</p>
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <Clock className="w-3 h-3" />
+                  <div className="flex-1 text-sm">
+                    <p className="text-stone-800 mb-1.5">{step.instruction}</p>
+                    <div className="flex items-center space-x-2 text-stone-500">
+                      <Clock className="w-3.5 h-3.5" />
                       <span>{step.duration} minutes</span>
                     </div>
                   </div>
@@ -220,9 +204,9 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
           <div className="text-center">
             <button
               onClick={() => onStartCooking(recipe)}
-              className="inline-flex items-center space-x-3 bg-gradient-to-r from-primary-600 to-accent-500 text-white px-8 py-4 rounded-2xl font-semibold text-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+              className="inline-flex items-center space-x-2 bg-stone-900 text-white px-6 py-3 rounded-lg font-semibold text-base hover:bg-stone-800 transition-colors shadow-sm"
             >
-              <Play className="w-6 h-6" />
+              <Play className="w-5 h-5" />
               <span>Start Cooking</span>
             </button>
           </div>
