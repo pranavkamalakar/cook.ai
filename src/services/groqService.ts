@@ -6,7 +6,7 @@ const SEARCH_ENGINE_ID = '70abbb6c38bda4a32';
 const CUSTOM_SEARCH_API_URL = 'https://customsearch.googleapis.com/customsearch/v1';
 
 if (!GROQ_API_KEY) {
-  throw new Error('VITE_GROQ_API_KEY environment variable is not set');
+  console.warn('VITE_GROQ_API_KEY environment variable is not set');
 }
 
 export class GroqService {
@@ -15,6 +15,10 @@ export class GroqService {
   private baseDelay = 2000; // 2 seconds
 
   async generateRecipe(query: string): Promise<Recipe> {
+    if (!GROQ_API_KEY) {
+      throw new Error('Groq API Key is not configured. Please add VITE_GROQ_API_KEY to your environment variables.');
+    }
+
     const prompt = `
 Create a detailed recipe for: "${query}"
 

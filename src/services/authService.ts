@@ -12,13 +12,16 @@ export class AuthService {
   private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
     if (!this.clientId) {
-      throw new Error('VITE_GOOGLE_CLIENT_ID environment variable is not set');
+      console.warn('VITE_GOOGLE_CLIENT_ID environment variable is not set');
     }
   }
 
   async initialize(): Promise<void> {
+    if (!this.clientId) {
+      throw new Error('VITE_GOOGLE_CLIENT_ID environment variable is not set');
+    }
     if (this.isInitialized) return;
     if (this.initPromise) return this.initPromise;
 
