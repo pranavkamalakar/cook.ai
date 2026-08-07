@@ -25,6 +25,7 @@ export class GroqService {
 
     const prompt = `
 You are a strict Culinary and Recipe AI. You are ONLY allowed to generate food, cooking, kitchen, and beverage recipes. 
+If the request is a dish name, an ingredient, a list of ingredients, or a cooking query (even if it is just a simple short phrase like "Paneer tikka", "Chicken biryani", "Chicken pasta", "Tacos"), it is a valid food/cooking request, so you must generate the recipe.
 If the user's request is NOT related to food, recipes, cooking, ingredients, or culinary techniques (for example, math queries like "8+19", history questions, programming queries, general conversations like "hello", etc.), you must NOT generate a recipe. Instead, return a JSON response containing ONLY an "error" field explaining that you can only assist with cooking and recipes:
 {
   "error": "I can only help you with food, cooking, and recipes. Please try searching for a culinary dish or ingredients!"
@@ -125,18 +126,17 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
         // Fetch YouTube cooking video tutorial
         const video = await this.fetchYouTubeVideo(recipeData.title);
         
-        interface RawCookingStep {
-          id: number;
-          instruction: string;
-          duration: number;
-        }
-
         // Use the same image for all steps to avoid multiple API calls
-        const stepsWithImages = (recipeData.steps as RawCookingStep[]).map((step, index) => ({
-          ...step,
-          id: index + 1,
-          image: recipeImage
-        }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const stepsWithImages = (recipeData.steps as any[]).map((step, index) => {
+          const instructionText = step.instruction || step.step || step.text || step.desc || step.instructionText || '';
+          return {
+            id: index + 1,
+            instruction: instructionText,
+            duration: step.duration || 5,
+            image: recipeImage
+          };
+        });
 
         const recipe: Recipe = {
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
