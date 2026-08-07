@@ -14,13 +14,18 @@ export class GroqService {
   private maxRetries = 3;
   private baseDelay = 2000; // 2 seconds
 
-  async generateRecipe(query: string): Promise<Recipe> {
+  async generateRecipe(query: string, userCountry?: string): Promise<Recipe> {
     if (!GROQ_API_KEY) {
       throw new Error('Groq API Key is not configured. Please add VITE_GROQ_API_KEY to your environment variables.');
     }
 
+    const locationContext = userCountry 
+      ? `Adjust ingredient terms, availability, and measurements for a user cooking in: ${userCountry}. (For example, use metric units like grams/ml if the user is in Europe/India/Australia, or imperial units like cups/ounces if in the United States. Use local terms like 'coriander' instead of 'cilantro' if appropriate).`
+      : '';
+
     const prompt = `
 Create a detailed recipe for: "${query}"
+${locationContext}
 
 Please provide a JSON response with the following structure:
 {
@@ -107,6 +112,9 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
         
         // Fetch the main recipe image
         const recipeImage = await this.fetchRecipeImage(`${recipeData.title} ${query}`);
+
+        // Fetch YouTube cooking video tutorial
+        const video = await this.fetchYouTubeVideo(recipeData.title);
         
         interface RawCookingStep {
           id: number;
@@ -131,6 +139,7 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
           servings: recipeData.servings || 4,
           ingredients: recipeData.ingredients,
           steps: stepsWithImages,
+          video: video || undefined,
           rating: 0,
           isFavorite: false,
           createdAt: new Date()
@@ -201,6 +210,58 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  private async fetchYouTubeVideo(recipeTitle: string): Promise<{ videoId: string; channelTitle: string; videoTitle: string } | null> {
+    if (!GOOGLE_SEARCH_API_KEY) {
+      return null;
+    }
+
+    try {
+      const params = new URLSearchParams({
+        key: GOOGLE_SEARCH_API_KEY,
+        cx: SEARCH_ENGINE_ID,
+        q: `${recipeTitle} recipe site:youtube.com/watch`,
+        num: '3',
+        safe: 'active'
+      });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+
+      const res = await fetch(`${CUSTOM_SEARCH_API_URL}?${params.toString()}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const data = await res.json();
+      if (data.items && data.items.length > 0) {
+        for (const item of data.items) {
+          const link = item.link || '';
+          const videoIdMatch = link.match(/[?&]v=([^&#]+)/);
+          if (videoIdMatch && videoIdMatch[1]) {
+            const channelTitle = item.pagemap?.person?.name || 
+                                 item.pagemap?.metatags?.[0]?.['og:site_name'] || 
+                                 item.author || 
+                                 'YouTube Cooking Channel';
+            return {
+              videoId: videoIdMatch[1],
+              videoTitle: item.title ? item.title.replace(' - YouTube', '') : recipeTitle,
+              channelTitle: channelTitle
+            };
+          }
+        }
+      }
+      return null;
+    } catch (error) {
+      console.warn('Error fetching YouTube video:', error);
+      return null;
+    }
+  }
+
   private async fetchRecipeImage(query: string): Promise<string> {
     // Always return fallback image first to avoid API quota issues
     if (!GOOGLE_SEARCH_API_KEY) {
@@ -216,8 +277,7 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
         num: '1',
         imgType: 'photo',
         safe: 'active',
-        imgSize: 'LARGE',
-        rights: 'cc_publicdomain,cc_attribute,cc_sharealike'
+        imgSize: 'LARGE'
       });
 
       const controller = new AbortController();

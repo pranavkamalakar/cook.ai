@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, ArrowDown, Clock, CheckCircle, Circle, Timer, Pause, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Clock, CheckCircle, Circle, Timer, Pause, Play } from 'lucide-react';
 import { Recipe } from '../types/Recipe';
 
 interface CookingModeProps {
@@ -78,22 +78,22 @@ const CookingMode: React.FC<CookingModeProps> = ({ recipe, onBack }) => {
   const progressPercentage = ((currentStepIndex + 1) / recipe.steps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-600 via-accent-500 to-food-500">
+    <div className="min-h-screen bg-[#faf8f5]">
       {/* Header */}
-      <div className="bg-white/10 backdrop-blur-md border-b border-white/20">
+      <div className="bg-white border-b border-[#f2ede4]">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={onBack}
-              className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors"
+              className="flex items-center space-x-2 text-stone-600 hover:text-stone-900 transition-colors font-medium text-sm"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
               <span>Exit Cooking</span>
             </button>
             
             <div className="text-center">
-              <h1 className="text-white font-semibold text-lg">{recipe.title}</h1>
-              <p className="text-white/70 text-sm">
+              <h1 className="text-stone-900 font-semibold text-base">{recipe.title}</h1>
+              <p className="text-stone-400 text-xs mt-0.5">
                 Step {currentStepIndex + 1} of {recipe.steps.length}
               </p>
             </div>
@@ -103,9 +103,9 @@ const CookingMode: React.FC<CookingModeProps> = ({ recipe, onBack }) => {
           
           {/* Progress Bar */}
           <div className="mt-4">
-            <div className="w-full bg-white/20 rounded-full h-2">
+            <div className="w-full bg-stone-100 rounded-full h-1.5 border border-stone-200/30">
               <div
-                className="bg-white rounded-full h-2 transition-all duration-500"
+                className="bg-orange-650 rounded-full h-1.5 transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -116,43 +116,45 @@ const CookingMode: React.FC<CookingModeProps> = ({ recipe, onBack }) => {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Step Image */}
+          {/* Step Image & Timer */}
           <div className="order-2 lg:order-1">
-            <div className="bg-white/20 backdrop-blur-md rounded-3xl p-6 border border-white/30 h-full">
-              {currentStep.image ? (
-                <img
-                  src={currentStep.image}
-                  alt={`Step ${currentStep.id}`}
-                  className="w-full h-64 object-cover rounded-2xl mb-4"
-                />
-              ) : (
-                <div className="w-full h-64 bg-white/10 rounded-2xl mb-4 flex items-center justify-center">
-                  <Clock className="w-12 h-12 text-white/50" />
-                </div>
-              )}
+            <div className="bg-white border border-[#f2ede4] rounded-xl p-5 shadow-sm h-full flex flex-col justify-between">
+              <div>
+                {currentStep.image ? (
+                  <img
+                    src={currentStep.image}
+                    alt={`Step ${currentStep.id}`}
+                    className="w-full h-60 object-cover rounded-lg mb-4 border border-[#f2ede4]"
+                  />
+                ) : (
+                  <div className="w-full h-60 bg-stone-50 border border-stone-200/50 rounded-lg mb-4 flex items-center justify-center">
+                    <Clock className="w-10 h-10 text-stone-300" />
+                  </div>
+                )}
+              </div>
               
               {/* Timer Section */}
-              <div className="text-center">
-                <div className="text-white/80 text-sm mb-2">Step Duration</div>
-                <div className="text-2xl font-bold text-white mb-4">
+              <div className="text-center bg-[#faf8f5] border border-[#f2ede4] rounded-xl p-4 mt-auto">
+                <div className="text-stone-500 text-xs font-semibold uppercase tracking-wider mb-1">Step Timer</div>
+                <div className="text-3xl font-bold text-stone-900 mb-3 font-mono">
                   {timeRemaining > 0 ? formatTime(timeRemaining) : `${currentStep.duration} min`}
                 </div>
                 
-                <div className="flex justify-center space-x-3">
+                <div className="flex justify-center">
                   {timeRemaining === 0 ? (
                     <button
                       onClick={startTimer}
-                      className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl transition-all"
+                      className="flex items-center space-x-1.5 bg-orange-600 hover:bg-orange-700 text-white font-medium text-xs px-4 py-2 rounded-lg transition-colors shadow-sm"
                     >
-                      <Timer className="w-4 h-4" />
+                      <Timer className="w-3.5 h-3.5" />
                       <span>Start Timer</span>
                     </button>
                   ) : (
                     <button
                       onClick={toggleTimer}
-                      className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl transition-all"
+                      className="flex items-center space-x-1.5 bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs px-4 py-2 rounded-lg transition-colors shadow-sm"
                     >
-                      {timerActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      {timerActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                       <span>{timerActive ? 'Pause' : 'Resume'}</span>
                     </button>
                   )}
@@ -163,88 +165,90 @@ const CookingMode: React.FC<CookingModeProps> = ({ recipe, onBack }) => {
 
           {/* Step Instructions */}
           <div className="order-1 lg:order-2">
-            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-8 border border-white/30 h-full flex flex-col">
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-accent-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg">
-                  {currentStep.id}
+            <div className="bg-white border border-[#f2ede4] rounded-xl p-6 shadow-sm h-full flex flex-col justify-between min-h-[350px]">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center font-bold text-base border border-orange-100">
+                    {currentStep.id}
+                  </div>
+                  
+                  <button
+                    onClick={toggleStepCompletion}
+                    className={`transition-colors duration-200 ${
+                      completedSteps.includes(currentStep.id)
+                        ? 'text-green-600'
+                        : 'text-stone-300 hover:text-stone-500'
+                    }`}
+                  >
+                    {completedSteps.includes(currentStep.id) ? (
+                      <CheckCircle className="w-7 h-7" />
+                    ) : (
+                      <Circle className="w-7 h-7" />
+                    )}
+                  </button>
                 </div>
                 
-                <button
-                  onClick={toggleStepCompletion}
-                  className={`transition-all duration-200 ${
-                    completedSteps.includes(currentStep.id)
-                      ? 'text-green-600'
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  {completedSteps.includes(currentStep.id) ? (
-                    <CheckCircle className="w-8 h-8" />
-                  ) : (
-                    <Circle className="w-8 h-8" />
-                  )}
-                </button>
-              </div>
-              
-              <div className="flex-1">
-                <p className="text-gray-800 text-lg leading-relaxed mb-6">
+                <p className="text-stone-850 text-base leading-relaxed mb-6 font-medium">
                   {currentStep.instruction}
                 </p>
-                
-                <div className="flex items-center space-x-2 text-gray-600 mb-8">
-                  <Clock className="w-4 h-4" />
-                  <span>{currentStep.duration} minutes</span>
-                </div>
               </div>
               
-              {/* Navigation */}
-              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                <button
-                  onClick={prevStep}
-                  disabled={isFirstStep}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                    isFirstStep
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Previous</span>
-                </button>
+              <div className="mt-auto">
+                <div className="flex items-center space-x-2 text-stone-500 text-sm mb-6 border-t border-[#f2ede4] pt-4">
+                  <Clock className="w-4 h-4" />
+                  <span>Duration: {currentStep.duration} minutes</span>
+                </div>
                 
-                <button
-                  onClick={nextStep}
-                  disabled={isLastStep}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                    isLastStep
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-primary-600 to-accent-500 hover:shadow-lg text-white transform hover:scale-105'
-                  }`}
-                >
-                  <span>{isLastStep ? 'Complete' : 'Next Step'}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                {/* Navigation */}
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={prevStep}
+                    disabled={isFirstStep}
+                    className={`flex items-center space-x-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all border ${
+                      isFirstStep
+                        ? 'bg-stone-50 text-stone-300 border-stone-150 cursor-not-allowed'
+                        : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200'
+                    }`}
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Previous</span>
+                  </button>
+                  
+                  <button
+                    onClick={nextStep}
+                    disabled={isLastStep}
+                    className={`flex items-center space-x-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all border ${
+                      isLastStep
+                        ? 'bg-stone-50 text-stone-300 border-stone-150 cursor-not-allowed'
+                        : 'bg-orange-600 hover:bg-orange-700 text-white border-transparent shadow-sm'
+                    }`}
+                  >
+                    <span>{isLastStep ? 'Complete' : 'Next Step'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Step Navigation Pills */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-          <div className="flex items-center justify-center space-x-2 overflow-x-auto pb-2">
+        <div className="bg-white border border-[#f2ede4] rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-center space-x-2 overflow-x-auto pb-1">
             {recipe.steps.map((step, index) => (
               <button
                 key={step.id}
                 onClick={() => setCurrentStepIndex(index)}
-                className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium transition-all ${
+                className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-colors ${
                   index === currentStepIndex
-                    ? 'bg-white text-primary-600'
+                    ? 'bg-orange-600 text-white'
                     : completedSteps.includes(step.id)
                     ? 'bg-green-500 text-white'
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                    : 'bg-stone-50 text-stone-600 hover:bg-stone-100 border border-stone-200/55'
                 }`}
               >
                 {completedSteps.includes(step.id) ? (
-                  <CheckCircle className="w-5 h-5" />
+                  <CheckCircle className="w-4 h-4" />
                 ) : (
                   step.id
                 )}

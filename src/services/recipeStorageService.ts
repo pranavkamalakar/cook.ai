@@ -27,7 +27,7 @@ export class RecipeStorageService {
       const recipes = JSON.parse(recipesData);
       
       // Ensure recipes have proper date objects
-      return recipes.map((recipe: any) => ({
+      return recipes.map((recipe: Recipe) => ({
         ...recipe,
         createdAt: new Date(recipe.createdAt)
       }));

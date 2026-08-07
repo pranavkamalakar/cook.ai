@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Search, Filter, Clock, Users, Star, Heart, Trash2 } from 'lucide-react';
+import { ArrowLeft, Search, Clock, Users, Star, Heart, Trash2 } from 'lucide-react';
 import { Recipe } from '../types/Recipe';
 
 interface RecipeLibraryProps {
@@ -16,7 +16,6 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({
   onSelectRecipe, 
   onDeleteRecipe, 
   onToggleFavorite, 
-  onRateRecipe, 
   onBack 
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,10 +30,11 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({
       switch (filterBy) {
         case 'favorites':
           return matchesSearch && recipe.isFavorite;
-        case 'recent':
+        case 'recent': {
           const oneWeekAgo = new Date();
           oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
           return matchesSearch && new Date(recipe.createdAt) > oneWeekAgo;
+        }
         default:
           return matchesSearch;
       }
@@ -232,13 +232,3 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({
 };
 
 export default RecipeLibrary;
-
-// Utility CSS classes that should be added to your global CSS
-const styles = `
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-`;

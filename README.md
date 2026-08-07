@@ -1,26 +1,26 @@
-# 🍳 Cook.AI
+# Cook.AI
 
 An AI-powered cooking companion that generates recipes and provides step-by-step cooking guidance.
 
-## 🔗 Live Demo
+## Live Demo
 
 **[https://cook-ai-app.netlify.app/](https://cook-ai-app.netlify.app/)**
 
-## ✨ Features
+## Features
 
-- AI recipe generation using Google Gemini
+- AI recipe generation using Groq
 - Step-by-step cooking mode
 - Save favorite recipes
 - Responsive design
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - TypeScript + Vite
 - Tailwind CSS
-- Google Gemini API
+- Groq API
 - Netlify hosting
 
-## 🚀 For Developers
+## For Developers
 
 ```bash
 # Clone repository
@@ -30,17 +30,17 @@ cd cook-ai
 # Install dependencies
 npm install
 
-# Add your Gemini API key to .env
+# Add your Groq API key to .env
 cp .env.example .env
 
 # Run locally
 npm run dev
 ```
 
-## 📧 Contact
+## Contact
 
 - Issues: [GitHub Issues](https://github.com/yourusername/cook-ai/issues)
 
 ---
 
-Made with ❤️ and AI
+Made with AI

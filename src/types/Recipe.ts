@@ -11,6 +11,11 @@ export interface Recipe {
   rating: number;
   isFavorite: boolean;
   createdAt: Date;
+  video?: {
+    videoId: string;
+    videoTitle: string;
+    channelTitle: string;
+  };
 }
 
 export interface Ingredient {

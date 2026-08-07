@@ -22,6 +22,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [userCountry, setUserCountry] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -30,6 +31,22 @@ function App() {
       setUser(currentUser);
       loadUserRecipes(currentUser);
     }
+
+    // Fetch IP Geolocation to customize recipes by region
+    fetch('https://ipapi.co/json/')
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Geolocation request failed');
+      })
+      .then(data => {
+        if (data && data.country_name) {
+          setUserCountry(data.country_name);
+          console.log(`Detected user location: ${data.country_name}`);
+        }
+      })
+      .catch(err => {
+        console.warn('Could not resolve user country geolocation:', err);
+      });
   }, []);
 
   const loadUserRecipes = (user: User) => {
@@ -123,7 +140,7 @@ function App() {
     setError(null);
     
     try {
-      const generatedRecipe = await groqService.generateRecipe(query);
+      const generatedRecipe = await groqService.generateRecipe(query, userCountry || undefined);
       handleRecipeGenerated(generatedRecipe);
     } catch (error) {
       console.error('Recipe generation failed:', error);
@@ -181,6 +198,7 @@ function App() {
             onSelectRecipe={handleStartCooking}
             user={user}
             onAuthRequired={handleAuthRequired}
+            userCountry={userCountry}
           />
         );
       
@@ -221,7 +239,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf9]">
+    <div className="min-h-screen bg-[#faf8f5]">
       <Header 
         currentScreen={currentScreen}
         onNavigate={handleNavigation}

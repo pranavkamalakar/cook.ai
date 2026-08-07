@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChefHat, Home, Book, LogOut, User } from 'lucide-react';
+import { ChefHat, Home, Book, LogOut } from 'lucide-react';
 import { User as UserType } from '../types/User';
 
 interface HeaderProps {
@@ -11,12 +11,12 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate, user, onSignOut }) => {
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-50">
+    <header className="bg-white/95 border-b border-[#f2ede4] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-stone-900 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-orange-600 rounded-lg flex items-center justify-center">
               <ChefHat className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -33,8 +33,8 @@ const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate, user, onSign
               onClick={() => onNavigate('home')}
               className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
                 currentScreen === 'home'
-                  ? 'bg-stone-100 text-stone-900 font-medium'
-                  : 'text-stone-600 hover:bg-stone-50'
+                  ? 'bg-orange-50 text-orange-600 font-medium'
+                  : 'text-stone-600 hover:bg-orange-50/50 hover:text-orange-600'
               }`}
             >
               <Home className="w-4 h-4" />
@@ -45,8 +45,8 @@ const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate, user, onSign
               onClick={() => onNavigate('library')}
               className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
                 currentScreen === 'library'
-                  ? 'bg-stone-100 text-stone-900 font-medium'
-                  : 'text-stone-600 hover:bg-stone-50'
+                  ? 'bg-orange-50 text-orange-600 font-medium'
+                  : 'text-stone-600 hover:bg-orange-50/50 hover:text-orange-600'
               }`}
             >
               <Book className="w-4 h-4" />
@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ currentScreen, onNavigate, user, onSign
             </button>
             
             {user && (
-              <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-stone-200">
+              <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-[#f2ede4]">
                 <div className="flex items-center space-x-2">
                   <img
                     src={user.picture}

@@ -10,9 +10,10 @@ interface HomeProps {
   onSelectRecipe: (recipe: Recipe) => void;
   user: User | null;
   onAuthRequired: () => void;
+  userCountry: string | null;
 }
 
-const Home: React.FC<HomeProps> = ({ onNavigate, onGenerateRecipe, recentRecipes, onSelectRecipe, user, onAuthRequired }) => {
+const Home: React.FC<HomeProps> = ({ onNavigate, onGenerateRecipe, recentRecipes, onSelectRecipe, user, onAuthRequired, userCountry }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = () => {
@@ -65,15 +66,20 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onGenerateRecipe, recentRecipes
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="I want to cook chicken pasta..."
-              className="w-full pl-12 pr-40 py-3.5 bg-white text-stone-900 border border-stone-200 rounded-xl text-base placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-stone-500 focus:border-stone-500 shadow-sm"
+              className="w-full pl-12 pr-40 py-3.5 bg-white text-stone-900 border border-[#f2ede4] rounded-xl text-base placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 shadow-sm"
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-stone-900 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-stone-800 transition-colors shadow-sm"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
             >
               Generate Recipe
             </button>
           </div>
+          {userCountry && (
+            <p className="text-xs text-stone-400 mt-2 font-medium">
+              Customizing recipe ingredients and units for: <span className="text-orange-600 font-semibold">{userCountry}</span>
+            </p>
+          )}
         </form>
 
         {/* Quick Suggestions */}
@@ -88,7 +94,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onGenerateRecipe, recentRecipes
                   onGenerateRecipe(suggestion);
                 }
               }}
-              className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full text-xs font-medium border-none transition-colors"
+              className="px-3.5 py-1.5 bg-[#f5ebd7]/50 hover:bg-[#f5ebd7] text-stone-700 rounded-full text-xs font-medium border-none transition-colors"
             >
               {suggestion}
             </button>
@@ -98,40 +104,40 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onGenerateRecipe, recentRecipes
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-[#f2ede4] rounded-xl p-5 shadow-sm hover:border-orange-200 transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-lg font-semibold text-stone-900">AI-Powered</p>
               <p className="text-stone-500 text-sm">Recipe Generation</p>
             </div>
-            <ChefHat className="w-7 h-7 text-stone-400" />
+            <ChefHat className="w-7 h-7 text-orange-500" />
           </div>
         </div>
         
-        <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-[#f2ede4] rounded-xl p-5 shadow-sm hover:border-orange-200 transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-lg font-semibold text-stone-900">Step-by-Step</p>
               <p className="text-stone-500 text-sm">Cooking Guidance</p>
             </div>
-            <Clock className="w-7 h-7 text-stone-400" />
+            <Clock className="w-7 h-7 text-orange-500" />
           </div>
         </div>
         
-        <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-[#f2ede4] rounded-xl p-5 shadow-sm hover:border-orange-200 transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-lg font-semibold text-stone-900">Smart</p>
               <p className="text-stone-500 text-sm">Recipe Management</p>
             </div>
-            <Users className="w-7 h-7 text-stone-400" />
+            <Users className="w-7 h-7 text-orange-500" />
           </div>
         </div>
       </div>
 
       {/* Recent Recipes */}
       {recentRecipes.length > 0 && (
-        <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-[#f2ede4] rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-stone-900">Recent Recipes</h2>
             <div className="flex items-center space-x-4">
@@ -140,7 +146,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onGenerateRecipe, recentRecipes
               </span>
               <button
                 onClick={() => onNavigate('library')}
-                className="text-stone-600 hover:text-stone-900 text-xs font-semibold"
+                className="text-orange-600 hover:text-orange-700 text-xs font-semibold"
               >
                 View All
               </button>

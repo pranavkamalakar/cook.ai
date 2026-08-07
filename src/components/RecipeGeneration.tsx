@@ -27,7 +27,7 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
 
   const LoadingAnimation = () => (
     <div className="flex flex-col items-center justify-center min-h-[350px] space-y-4">
-      <div className="w-10 h-10 border-2 border-stone-200 border-t-stone-850 rounded-full animate-spin" />
+      <div className="w-10 h-10 border-2 border-stone-200 border-t-orange-600 rounded-full animate-spin" />
       <div className="text-center space-y-1">
         <h2 className="text-xl font-semibold text-stone-900">Creating your recipe</h2>
         <p className="text-stone-500 text-sm">Please wait while our assistant drafts the details...</p>
@@ -48,7 +48,7 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
       
       <button
         onClick={onBack}
-        className="bg-stone-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm"
+        className="bg-orange-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm"
       >
         Try Again
       </button>
@@ -169,6 +169,35 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
             </div>
           </div>
 
+          {/* YouTube Video Embed */}
+          {recipe.video && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-stone-900 mb-4 flex items-center">
+                Video Tutorial
+              </h2>
+              <div className="bg-[#faf8f5] border border-[#f2ede4] rounded-xl p-4">
+                <div className="relative w-full pb-[56.25%] h-0 rounded-lg overflow-hidden border border-[#f2ede4] bg-stone-100">
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full"
+                    src={`https://www.youtube.com/embed/${recipe.video.videoId}`}
+                    title={recipe.video.videoTitle}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-stone-500">
+                  <span className="truncate font-medium text-stone-700">
+                    Video: {recipe.video.videoTitle}
+                  </span>
+                  <span className="flex-shrink-0 text-orange-600 font-semibold bg-orange-50 px-2.5 py-1 rounded-md">
+                    Courtesy: {recipe.video.channelTitle}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Instructions Preview */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Instructions</h2>
@@ -204,7 +233,7 @@ const RecipeGeneration: React.FC<RecipeGenerationProps> = ({
           <div className="text-center">
             <button
               onClick={() => onStartCooking(recipe)}
-              className="inline-flex items-center space-x-2 bg-stone-900 text-white px-6 py-3 rounded-lg font-semibold text-base hover:bg-stone-800 transition-colors shadow-sm"
+              className="inline-flex items-center space-x-2 bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold text-base hover:bg-orange-700 transition-colors shadow-sm"
             >
               <Play className="w-5 h-5" />
               <span>Start Cooking</span>
