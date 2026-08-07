@@ -23,6 +23,23 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [userCountry, setUserCountry] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('cook-ai-theme') as 'light' | 'dark') || 'light';
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('cook-ai-theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -239,13 +256,17 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf8f5]">
-      <Header 
-        currentScreen={currentScreen}
-        onNavigate={handleNavigation}
-        user={user}
-        onSignOut={handleSignOut}
-      />
+    <div className="min-h-screen bg-[#faf8f5] dark:bg-dark-600 transition-colors duration-200">
+      {currentScreen !== 'cooking' && (
+        <Header 
+          currentScreen={currentScreen}
+          onNavigate={handleNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+        />
+      )}
       <main>
         {renderScreen()}
       </main>

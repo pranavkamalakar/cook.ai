@@ -24,10 +24,14 @@ export class GroqService {
       : '';
 
     const prompt = `
-Create a detailed recipe for: "${query}"
-${locationContext}
+You are a strict Culinary and Recipe AI. You are ONLY allowed to generate food, cooking, kitchen, and beverage recipes. 
+If the user's request is NOT related to food, recipes, cooking, ingredients, or culinary techniques (for example, math queries like "8+19", history questions, programming queries, general conversations like "hello", etc.), you must NOT generate a recipe. Instead, return a JSON response containing ONLY an "error" field explaining that you can only assist with cooking and recipes:
+{
+  "error": "I can only help you with food, cooking, and recipes. Please try searching for a culinary dish or ingredients!"
+}
 
-Please provide a JSON response with the following structure:
+Otherwise, if the query is a valid food/cooking request, provide a JSON response with the following structure:
+${locationContext}
 {
   "title": "Recipe name",
   "description": "Brief description of the dish",
@@ -104,6 +108,11 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
         }
         
         const recipeData = JSON.parse(jsonMatch[0]);
+
+        // Check for culinary validation error returned by the AI
+        if (recipeData.error) {
+          throw new Error(recipeData.error);
+        }
         
         // Validate required fields
         if (!recipeData.title || !recipeData.ingredients || !recipeData.steps) {
@@ -211,55 +220,87 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
   }
 
   private async fetchYouTubeVideo(recipeTitle: string): Promise<{ videoId: string; channelTitle: string; videoTitle: string } | null> {
-    if (!GOOGLE_SEARCH_API_KEY) {
-      return null;
-    }
+    // 1. Try Google Custom Search first if key is present
+    if (GOOGLE_SEARCH_API_KEY) {
+      try {
+        const params = new URLSearchParams({
+          key: GOOGLE_SEARCH_API_KEY,
+          cx: SEARCH_ENGINE_ID,
+          q: `${recipeTitle} recipe site:youtube.com/watch`,
+          num: '3',
+          safe: 'active'
+        });
 
-    try {
-      const params = new URLSearchParams({
-        key: GOOGLE_SEARCH_API_KEY,
-        cx: SEARCH_ENGINE_ID,
-        q: `${recipeTitle} recipe site:youtube.com/watch`,
-        num: '3',
-        safe: 'active'
-      });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+        const res = await fetch(`${CUSTOM_SEARCH_API_URL}?${params.toString()}`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
 
-      const res = await fetch(`${CUSTOM_SEARCH_API_URL}?${params.toString()}`, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        return null;
-      }
-
-      const data = await res.json();
-      if (data.items && data.items.length > 0) {
-        for (const item of data.items) {
-          const link = item.link || '';
-          const videoIdMatch = link.match(/[?&]v=([^&#]+)/);
-          if (videoIdMatch && videoIdMatch[1]) {
-            const channelTitle = item.pagemap?.person?.name || 
-                                 item.pagemap?.metatags?.[0]?.['og:site_name'] || 
-                                 item.author || 
-                                 'YouTube Cooking Channel';
-            return {
-              videoId: videoIdMatch[1],
-              videoTitle: item.title ? item.title.replace(' - YouTube', '') : recipeTitle,
-              channelTitle: channelTitle
-            };
+        if (res.ok) {
+          const data = await res.json();
+          if (data.items && data.items.length > 0) {
+            for (const item of data.items) {
+              const link = item.link || '';
+              const videoIdMatch = link.match(/[?&]v=([^&#]+)/);
+              if (videoIdMatch && videoIdMatch[1]) {
+                const channelTitle = item.pagemap?.person?.name || 
+                                     item.pagemap?.metatags?.[0]?.['og:site_name'] || 
+                                     item.author || 
+                                     'YouTube Cooking Channel';
+                return {
+                  videoId: videoIdMatch[1],
+                  videoTitle: item.title ? item.title.replace(' - YouTube', '') : recipeTitle,
+                  channelTitle: channelTitle
+                };
+              }
+            }
           }
         }
+      } catch (e) {
+        console.warn('Google CSE YouTube search failed, trying fallback:', e);
       }
-      return null;
-    } catch (error) {
-      console.warn('Error fetching YouTube video:', error);
-      return null;
     }
+
+    // 2. Fallback to public Invidious instances (no API key needed, has CORS enabled)
+    const instances = [
+      'https://yewtu.be',
+      'https://vid.puffyan.us',
+      'https://invidious.flokinet.to',
+      'https://inv.tux.pizza'
+    ];
+
+    for (const instance of instances) {
+      try {
+        const url = `${instance}/api/v1/search?q=${encodeURIComponent(recipeTitle + ' recipe')}&type=video`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout for fast fallback
+
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const video = data.find(item => item.type === 'video');
+            if (video && video.videoId) {
+              return {
+                videoId: video.videoId,
+                videoTitle: video.title || recipeTitle,
+                channelTitle: video.author || 'YouTube Chef'
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`Invidious search fallback failed for ${instance}:`, err);
+      }
+    }
+
+    return null;
   }
 
   private async fetchRecipeImage(query: string): Promise<string> {
