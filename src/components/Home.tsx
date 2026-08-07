@@ -31,16 +31,65 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onGenerateRecipe, recentRecipes
     }
   };
 
-  const quickSuggestions = [
-    'Chicken pasta',
-    'Beef tacos',
-    'Vegetarian curry',
-    'Salmon dinner',
-    'Breakfast pancakes',
-    'Chocolate cake',
-    'Stir fry vegetables',
-    'Pizza margherita'
-  ];
+  const getQuickSuggestions = (country: string | null) => {
+    const defaultSuggestions = [
+      'Chicken pasta',
+      'Chicken tacos',
+      'Vegetarian curry',
+      'Salmon dinner',
+      'Breakfast pancakes',
+      'Chocolate cake',
+      'Stir fry vegetables',
+      'Pizza margherita'
+    ];
+
+    if (!country) return defaultSuggestions;
+
+    const countryLower = country.toLowerCase();
+    
+    if (countryLower.includes('india')) {
+      return [
+        'Paneer tikka',
+        'Chicken biryani',
+        'Masala dosa',
+        'Dal makhani',
+        'Aloo paratha',
+        'Butter chicken',
+        'Chole bhature',
+        'Gulab jamun'
+      ];
+    }
+
+    if (countryLower.includes('italy')) {
+      return [
+        'Pizza margherita',
+        'Pasta carbonara',
+        'Mushroom risotto',
+        'Lasagna bolognese',
+        'Bruschetta',
+        'Tiramisu',
+        'Minestrone soup',
+        'Caprese salad'
+      ];
+    }
+
+    if (countryLower.includes('mexico')) {
+      return [
+        'Chicken tacos',
+        'Guacamole & chips',
+        'Beef enchiladas',
+        'Cheese quesadillas',
+        'Churros',
+        'Fajitas',
+        'Pico de gallo',
+        'Sopa de lima'
+      ];
+    }
+
+    return defaultSuggestions;
+  };
+
+  const quickSuggestions = getQuickSuggestions(userCountry);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
