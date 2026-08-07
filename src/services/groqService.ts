@@ -120,8 +120,11 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
           throw new Error('Incomplete recipe data received');
         }
         
-        // Fetch the main recipe image
-        const recipeImage = await this.fetchRecipeImage(`${recipeData.title} ${query}`);
+        // Fetch recipe image using multi-tier fallback (Wikipedia -> Google CSE -> Stock)
+        let recipeImage = await this.fetchWikipediaImage(recipeData.title);
+        if (!recipeImage) {
+          recipeImage = await this.fetchRecipeImage(recipeData.title);
+        }
 
         // Fetch YouTube cooking video tutorial
         const video = await this.fetchYouTubeVideo(recipeData.title);
@@ -301,6 +304,38 @@ Make sure the recipe is practical, detailed, and includes realistic cooking time
     }
 
     return null;
+  }
+
+  private async fetchWikipediaImage(query: string): Promise<string | null> {
+    try {
+      // 1. Search Wikipedia for the best matching article title
+      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`;
+      const searchRes = await fetch(searchUrl);
+      if (!searchRes.ok) return null;
+      
+      const searchData = await searchRes.json();
+      const topTitle = searchData?.query?.search?.[0]?.title;
+      if (!topTitle) return null;
+
+      // 2. Fetch the main original page image for this Wikipedia article
+      const imageUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=original&titles=${encodeURIComponent(topTitle)}&origin=*`;
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) return null;
+
+      const imgData = await imgRes.json();
+      const pages = imgData?.query?.pages;
+      if (pages) {
+        const pageId = Object.keys(pages)[0];
+        const source = pages[pageId]?.original?.source;
+        if (source && (source.startsWith('http://') || source.startsWith('https://'))) {
+          return source;
+        }
+      }
+      return null;
+    } catch (e) {
+      console.warn('Wikipedia image search failed:', e);
+      return null;
+    }
   }
 
   private async fetchRecipeImage(query: string): Promise<string> {
