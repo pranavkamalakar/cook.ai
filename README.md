@@ -4,28 +4,30 @@ An AI-powered cooking companion that generates recipes and provides step-by-step
 
 ## Live Demo
 
-**[https://cook-ai-app.netlify.app/](https://cook-ai-app.netlify.app/)**
+Hosted on Vercel: **[https://cook-ai.vercel.app/](https://cook-ai.vercel.app/)**
 
 ## Features
 
 - AI recipe generation using Groq
 - Step-by-step cooking mode
 - Save favorite recipes
-- Responsive design
+- Responsive design with dark mode
+- Region-aware localized recipe suggestions
+- YouTube video cooking tutorials
 
 ## Tech Stack
 
 - TypeScript + Vite
 - Tailwind CSS
 - Groq API
-- Netlify hosting
+- Vercel hosting
 
 ## For Developers
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/cook-ai.git
-cd cook-ai
+git clone https://github.com/pranavkamalakar/cook.ai.git
+cd cook.ai
 
 # Install dependencies
 npm install
@@ -39,7 +41,7 @@ npm run dev
 
 ## Contact
 
-- Issues: [GitHub Issues](https://github.com/yourusername/cook-ai/issues)
+- Issues: [GitHub Issues](https://github.com/pranavkamalakar/cook.ai/issues)
 
 ---
 
